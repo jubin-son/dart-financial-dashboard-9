@@ -1,5 +1,5 @@
 'use client';
-
+import PdfUpload from './components/PdfUpload';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Chart as ChartJS,
@@ -255,6 +255,8 @@ const chartOptions = {
 };
 
 export default function Home() {
+  const [auditFinancialData,setAuditFinancialData,] = useState(null);
+  const [auditPdf, setAuditPdf] = useState(null);
   const [step, setStep] = useState('search');
   const [query, setQuery] = useState('');
   const [companies, setCompanies] = useState([]);
@@ -654,6 +656,14 @@ window.onafterprint=()=>window.close();
               <div className="empty-reports">
                 <strong>선택한 연도에 분석 가능한 정기보고서가 없습니다.</strong>
                 <p>기준연도를 변경하거나 별도재무제표로 다시 시도해 주세요.</p>
+
+                <PdfUpload
+  selectedFile={auditPdf}
+  onFileSelect={setAuditPdf}
+  onExtractedData={
+    setAuditFinancialData
+  }
+/>
               </div>
             )}
 

@@ -22,3 +22,125 @@
 
 /* V8 author mark and report selector modal */
 .brand{display:flex;align-items:baseline;gap:9px}.brand small{font-size:10px;font-weight:700;letter-spacing:.2px;color:#8a94a7}.modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(10,20,43,.58);backdrop-filter:blur(7px);display:grid;place-items:center;padding:24px}.report-modal{position:relative;width:min(720px,94vw);max-height:min(760px,90vh);overflow:auto;background:#fff;border-radius:24px;padding:30px;box-shadow:0 28px 90px rgba(3,12,35,.28)}.modal-close{position:absolute;top:16px;right:18px;width:36px;height:36px;border:0;border-radius:50%;background:#f2f4f8;color:#44506a;font-size:24px;line-height:1}.report-modal h2{font-size:28px;letter-spacing:-.7px;margin:0 42px 8px 0}.modal-description{color:var(--muted);line-height:1.6;margin:0 0 18px}.modal-settings{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.modal-settings span{background:#f1f5ff;color:#244fd8;border:1px solid #dce5ff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800}.modal-loading{display:flex;align-items:center;justify-content:center;gap:10px;min-height:150px;color:#44506a}.report-list{display:grid;gap:10px}.report-list>button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid var(--line);border-radius:15px;background:#fff;padding:17px 18px;text-align:left;transition:.16s ease}.report-list>button:hover{border-color:#2457d6;background:#f8faff;transform:translateY(-1px)}.report-list>button>div:first-child{display:flex;flex-direction:column;gap:5px;min-width:0}.report-list strong{font-size:16px}.report-list span{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.report-date{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px}.report-date b{font-size:12px;color:#44506a}.report-date span{color:#2457d6!important;font-weight:800}.empty-reports{border:1px dashed #ccd4e3;border-radius:15px;padding:28px;text-align:center;background:#fafbfe}.empty-reports p{color:var(--muted);margin:8px 0 0;font-size:13px}@media(max-width:600px){.brand small{display:none}.report-modal{padding:24px 18px}.report-list>button{align-items:flex-start}.report-date b{display:none}}
+
+.pdf-upload-card {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.pdf-upload-head h3 {
+  margin: 6px 0 8px;
+  font-size: 20px;
+  color: #172033;
+}
+
+.pdf-upload-head p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.pdf-dropzone {
+  margin-top: 20px;
+  min-height: 210px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: 0.2s ease;
+}
+
+.pdf-dropzone.active {
+  border-color: #2457d6;
+  background: #f1f5ff;
+}
+
+.pdf-dropzone.disabled {
+  opacity: 0.55;
+}
+
+.pdf-icon,
+.selected-pdf-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #eef2ff;
+  color: #2457d6;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.pdf-dropzone strong {
+  color: #172033;
+  font-size: 15px;
+}
+
+.pdf-dropzone span,
+.pdf-dropzone small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.pdf-dropzone button {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #2457d6;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.selected-pdf {
+  width: 100%;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.selected-pdf-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selected-pdf-info strong {
+  word-break: break-all;
+}
+
+.pdf-change-button {
+  flex: none;
+}
+
+.pdf-upload-notice {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.pdf-upload-notice strong {
+  display: block;
+  font-size: 13px;
+  color: #334155;
+}
+
+.pdf-upload-notice p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #64748b;
+}
