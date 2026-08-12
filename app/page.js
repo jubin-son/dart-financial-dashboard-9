@@ -279,11 +279,34 @@ export default function Home() {
   const [peerResults, setPeerResults] = useState([]);
   const [peers, setPeers] = useState([]);
   const [peerLoading, setPeerLoading] = useState(false);
+  const [showDirectPdfUpload, setShowDirectPdfUpload] = useState(false);
   const marginChartRef = useRef(null);
   const stabilityChartRef = useRef(null);
   const growthChartRef = useRef(null);
   const cashChartRef = useRef(null);
-  const metrics = useMemo(() => calculateMetrics(years), [years]);
+  const analysisSource =
+  auditFinancialData?.years?.length
+    ? 'PDF'
+    : 'DART';
+
+const analysisYears = useMemo(() => {
+  if (auditFinancialData?.years?.length) {
+    return auditFinancialData.years;
+  }
+
+  return years;
+}, [auditFinancialData, years]);
+const analysisYearCount = analysisYears.length;
+
+const analysisPeriodLabel =
+  analysisYearCount >= 2
+    ? `${analysisYearCount}개년`
+    : '단일 연도';
+
+const metrics = useMemo(
+  () => calculateMetrics(analysisYears),
+  [analysisYears]
+);
   const insights = useMemo(() => generateInsights(metrics), [metrics]);
   const sectionComments = useMemo(() => generateSectionComments(metrics), [metrics]);
   const healthScore = useMemo(() => calculateHealthScore(metrics), [metrics]);
@@ -302,6 +325,15 @@ export default function Home() {
 
   async function searchCompanies(e) {
     e?.preventDefault();
+    
+    // 이전 PDF 분석 상태 초기화
+    setAuditPdf(null);
+    setAuditFinancialData(null);
+
+    setLoading(true);
+    setError('');
+
+   // 이하 기존 코드 그대로
     setLoading(true); setLoadingMessage(companyIndexReady ? '기업을 검색하고 있습니다.' : '최초 기업 목록을 준비하고 있습니다.'); setError('');
     try {
       const data = await fetchJsonWithTimeout(`/api/companies?q=${encodeURIComponent(query)}`, 25000);
@@ -362,7 +394,48 @@ export default function Home() {
       setLoadingMessage('');
     }
   }
+function analyzeAuditPdf(data) {
+  if (!data?.years?.length) {
+    setError('분석할 PDF 재무데이터가 없습니다.');
+    return;
+  }
 
+  setAuditFinancialData(data);
+  setYears(data.years);
+
+  // 기업 검색 후 PDF 업로드한 경우
+  if (reportCompany) {
+    setSelected(reportCompany);
+  }
+
+  // 메인 화면에서 PDF를 바로 업로드한 경우
+  else if (!selected && auditPdf) {
+    const fileName = auditPdf.name
+      .replace(/\.pdf$/i, '')
+      .replace(/감사보고서.*$/i, '')
+      .replace(/[\[\]()]/g, '')
+      .trim();
+
+    setSelected({
+      corpName: fileName || 'PDF 업로드 기업',
+      stockCode: '',
+      corpCode: '',
+    });
+
+    setCompanyInfo(null);
+  }
+
+  setAvailableReports([]);
+  setReportCode(null);
+  setReportModalOpen(false);
+  setShowDirectPdfUpload(false);
+
+  setError('');
+  setLoading(false);
+  setReportLoading(false);
+
+  setStep('summary');
+}
   async function searchPeers(e) {
     e?.preventDefault();
     if (peerQuery.trim().length < 2) return;
@@ -455,8 +528,16 @@ export default function Home() {
         </div>
       </article>`;
 
-    const html = `<!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><title>${escapeHtml(selected?.corpName)} 재무분석 보고서</title>
+    const reportTitle =
+  analysisSource === 'PDF'
+    ? `${selected?.corpName || '기업'}_감사보고서_재무분석`
+    : `${selected?.corpName || '기업'}_DART_재무분석`;
+
+const html = `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(reportTitle)}</title>
 <style>
 @page{size:A4 landscape;margin:0}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -466,7 +547,29 @@ html,body{margin:0;padding:0;width:297mm;height:210mm;overflow:hidden;background
 .eyebrow{font-size:7pt;letter-spacing:1.4px;color:#2457d6;font-weight:800}.header h1{font-size:19pt;letter-spacing:-1px;margin:1mm 0 0}.meta{text-align:right;display:flex;flex-direction:column;gap:1mm}.meta b{font-size:9pt}.meta span{font-size:7pt;color:#697386}.pdf-score{display:flex;align-items:baseline;justify-content:flex-end;gap:1.5mm;margin-bottom:.5mm}.pdf-score strong{font-size:15pt;color:#2457d6}.pdf-score small{font-size:6.5pt;color:#697386}
 .kpis{height:23mm;display:grid;grid-template-columns:repeat(6,1fr);gap:2mm;padding:3mm 0;flex:none}.kpi{border-radius:3mm;padding:2.5mm 3mm;background:#f4f7ff;border:1px solid #dfe6fa;display:flex;flex-direction:column;justify-content:center}.kpi span{font-size:7pt;color:#697386}.kpi strong{font-size:12.5pt;margin-top:1mm}
 .grid{height:124mm;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:2.5mm;flex:none}.analysis-card{border:1px solid #dfe3eb;border-radius:3mm;padding:2.5mm 3mm;display:flex;flex-direction:column;overflow:hidden;background:#fff}.analysis-card h3{font-size:9.5pt;margin:0 0 1.5mm;padding-bottom:1.5mm;border-bottom:2px solid #2457d6}.analysis-card.profitability h3{border-color:#7c3aed}.analysis-card.stability h3{border-color:#f97316}.analysis-card.growth h3{border-color:#2457d6}.analysis-card.cashflow h3{border-color:#12a594}.card-body{display:grid;grid-template-columns:46% 54%;gap:3mm;min-height:0;flex:1;align-items:center}.chart-image{height:47mm;display:flex;align-items:center;justify-content:center;overflow:hidden}.chart-image img{display:block;width:100%;height:100%;object-fit:contain}.chart-fallback{font-size:7pt;color:#94a3b8;text-align:center}.analysis-card p{font-size:6.65pt;line-height:1.48;margin:0;color:#3f4b62;text-align:justify;overflow:hidden}
-.bottom{height:28.5mm;margin-top:2.5mm;border-radius:3mm;background:#14213d;color:#fff;padding:3mm 4mm;display:grid;grid-template-columns:1fr 62mm;gap:5mm;align-items:center;overflow:hidden;flex:none}.bottom h3{font-size:9pt;margin:0 0 1mm}.bottom p{font-size:6.8pt;line-height:1.45;margin:0}.bottom small{font-size:6.2pt;line-height:1.45;color:#cbd5e1;border-left:1px solid #51617d;padding-left:4mm}
+.bottom{height:28.5mm;margin-top:2.5mm;border-radius:3mm;background:#14213d;color:#fff;padding:3mm 4mm;display:grid;grid-template-columns:1fr 62mm;gap:5mm;align-items:center;overflow:hidden;flex:none}.bottom h3{font-size:9pt;margin:0 0 1mm}.bottom p{font-size:6.8pt;line-height:1.45;margin:0}
+.pdf-footer-info{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:2mm;
+  border-left:1px solid #51617d;
+  padding-left:4mm;
+}
+
+.pdf-footer-info small{
+  font-size:6.2pt;
+  line-height:1.45;
+  color:#cbd5e1;
+  border-left:0;
+  padding-left:0;
+}
+
+.pdf-footer-info span{
+  font-size:6pt;
+  color:#94a3b8;
+  white-space:nowrap;
+}
 @media print{html,body,.sheet{width:297mm;height:210mm}.sheet{page-break-after:avoid;break-after:avoid-page}}
 </style></head><body><main class="sheet">
 <header class="header"><div><div class="eyebrow">DART FINANCIAL INSIGHT</div><h1>${escapeHtml(selected?.corpName)} 재무분석 보고서</h1></div><div class="meta"><div class="pdf-score"><strong>${Number.isFinite(healthScore.total) ? Math.round(healthScore.total) : '-'}점</strong><small>재무 건강도</small></div><b>${escapeHtml(metrics.current.year)} ${escapeHtml(reportName(reportCode))}</b><span>${fsDiv === 'CFS' ? '연결재무제표' : '별도재무제표'} · Open DART</span></div></header>
@@ -479,7 +582,23 @@ ${card('안정성','stability',images.stability,sectionComments.stability.join('
 ${card('성장성','growth',images.growth,sectionComments.growth.join(' '))}
 ${card('현금흐름','cashflow',images.cashflow,sectionComments.cashflow.join(' '))}
 </section>
-<section class="bottom"><div><h3>종합 의견</h3><p>${escapeHtml(insights.join(' '))}</p></div><small>자동 분석 결과는 투자 판단을 위한 단독 자료가 아니며, 선택한 정기보고서 원문과 주석을 함께 검토해야 합니다.</small></section>
+<section class="bottom">
+  <div>
+    <h3>종합 의견</h3>
+    <p>${escapeHtml(insights.join(' '))}</p>
+  </div>
+
+  <div class="pdf-footer-info">
+    <small>
+      자동 분석 결과는 투자 판단을 위한 단독 자료가 아니며,
+      공시 원문과 주석을 함께 검토해야 합니다.
+    </small>
+
+    <span>
+      Generated by DART Financial Insight · Made by Jubin Son
+    </span>
+  </div>
+</section>
 </main><script>
 const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r}))).then(()=>setTimeout(()=>{window.print()},250));
 window.onafterprint=()=>window.close();
@@ -510,6 +629,75 @@ window.onafterprint=()=>window.close();
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="기업명 또는 종목코드 입력 (예: 삼성전자, 005930)" />
             <button disabled={loading || query.trim().length < 2}>{loading ? '처리 중...' : '기업 검색'}</button>
           </form>
+          <div
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    margin: '22px 0',
+  }}
+>
+  <div
+    style={{
+      height: 1,
+      flex: 1,
+      background: '#e2e8f0',
+    }}
+  />
+
+  <span
+    style={{
+      fontSize: 12,
+      color: '#94a3b8',
+      fontWeight: 600,
+    }}
+  >
+    또는
+  </span>
+
+  <div
+    style={{
+      height: 1,
+      flex: 1,
+      background: '#e2e8f0',
+    }}
+  />
+</div>
+
+<button
+  type="button"
+  onClick={() => {
+  if (!showDirectPdfUpload) {
+    setAuditPdf(null);
+    setAuditFinancialData(null);
+  }
+
+  setShowDirectPdfUpload((prev) => !prev);
+}}
+  style={{
+    width: '100%',
+    padding: '14px 18px',
+    borderRadius: 12,
+    border: '1px solid #d7def0',
+    background: '#ffffff',
+    color: '#2457d6',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+  }}
+>
+  {showDirectPdfUpload
+    ? 'PDF 업로드 닫기'
+    : '감사보고서 PDF 바로 업로드'}
+</button>
+{showDirectPdfUpload && (
+  <PdfUpload
+    selectedFile={auditPdf}
+    onFileSelect={setAuditPdf}
+    onExtractedData={setAuditFinancialData}
+    onAnalyze={analyzeAuditPdf}
+  />
+)}
           <div className="filters">
             <label>공시연도 <input type="number" value={baseYear} onChange={(e) => setBaseYear(Number(e.target.value))} /></label>
             <label>재무제표 <select value={fsDiv} onChange={(e) => setFsDiv(e.target.value)}><option value="CFS">연결</option><option value="OFS">별도</option></select></label>
@@ -555,14 +743,54 @@ window.onafterprint=()=>window.close();
                   <article className="kpi" key={label}><span>{label}</span><strong>{money(value)}</strong><em className={change >= 0 ? 'up' : 'down'}>{change == null ? '비교 불가' : `전년 대비 ${change >= 0 ? '+' : ''}${change.toFixed(1)}%`}</em></article>
                 ))}
               </section>
-              <section className="panel chart-panel"><h2>3개년 손익 추세</h2><div className="chart"><Line data={incomeChart} options={chartOptions} /></div></section>
-              <section className="panel"><h2>재무제표 기본 요약</h2><div className="table-wrap"><table><thead><tr><th>항목</th>{years.map((y) => <th key={y.year}>{y.year}</th>)}<th>전년 대비</th></tr></thead><tbody>
+              <section className="panel chart-panel"><h2>{analysisPeriodLabel} 손익 추세</h2><div className="chart"><Line data={incomeChart} options={chartOptions} /></div></section>
+              <section className="panel"><h2>재무제표 기본 요약</h2>
+              <div
+  style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 18,
+    padding: '8px 14px',
+    borderRadius: 999,
+    fontSize: 13,
+    fontWeight: 600,
+    background:
+      analysisSource === 'PDF'
+        ? '#f3e8ff'
+        : '#ecfdf5',
+    color:
+      analysisSource === 'PDF'
+        ? '#7c3aed'
+        : '#047857',
+  }}
+>
+  {analysisSource === 'PDF'
+    ? '📄 감사보고서 PDF 분석'
+    : '🟢 DART 사업보고서 분석'}
+</div>
+              <div className="table-wrap"><table><thead><tr><th>항목</th>{years.map((y) => <th key={y.year}>{y.year}</th>)}<th>전년 대비</th></tr></thead><tbody>
                 {[
                   ['매출액','revenue'],['영업이익','operatingIncome'],['당기순이익','netIncome'],['자산총계','totalAssets'],['부채총계','totalLiabilities'],['자본총계','totalEquity']
                 ].map(([label,key]) => <tr key={key}><td>{label}</td>{years.map((y) => <td key={y.year}>{money(y[key])}</td>)}<td>{pct(growth(metrics.current[key], metrics.previous[key]))}</td></tr>)}
               </tbody></table></div></section>
               <section className="insight"><h2>기본 분석</h2>{insights.slice(0,3).map((line) => <p key={line}>{line}</p>)}</section>
-              <div className="actions no-print"><button className="secondary" onClick={() => setStep('search')}>다른 기업 검색</button><button onClick={() => setStep('analysis')}>핵심 분석지표 보기 →</button></div>
+              <div className="actions no-print">
+                <button
+                 className="secondary"
+                 onClick={() => {
+                  setAuditPdf(null);
+                  setAuditFinancialData(null);
+                  setYears([]);
+                  setSelected(null);
+                  setCompanyInfo(null);
+                  setStep('search');
+                 }}
+                >
+                 다른 기업 검색
+                </button>
+                <button onClick={() => setStep('analysis')}>핵심 분석지표 보기 →</button></div>
             </>
           )}
 
@@ -660,9 +888,8 @@ window.onafterprint=()=>window.close();
                 <PdfUpload
   selectedFile={auditPdf}
   onFileSelect={setAuditPdf}
-  onExtractedData={
-    setAuditFinancialData
-  }
+  onExtractedData={setAuditFinancialData}
+  onAnalyze={analyzeAuditPdf}
 />
               </div>
             )}

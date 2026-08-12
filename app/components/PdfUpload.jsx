@@ -40,6 +40,7 @@ export default function PdfUpload({
   selectedFile,
   onFileSelect,
   onExtractedData,
+  onAnalyze,
   disabled = false,
 }) {
   const inputRef =
@@ -50,7 +51,7 @@ export default function PdfUpload({
 
   const [message, setMessage] =
     useState('');
-
+  const [progressStep, setProgressStep] = useState(0);
   const [preview, setPreview] =
     useState('');
 
@@ -97,10 +98,8 @@ export default function PdfUpload({
     file
   ) {
     setStatus('loading');
-
-    setMessage(
-      'PDF 내용을 읽고 있습니다...'
-    );
+setProgressStep(1);
+setMessage('PDF 내용을 읽고 있습니다...');
 
     setPreview('');
     setExtractedData(null);
@@ -156,10 +155,14 @@ export default function PdfUpload({
       const fullText =
         pageTexts.join('\n');
 
+        setProgressStep(2);
+setMessage('재무제표 핵심 계정을 추출하고 있습니다...');
+
       const financialData =
         extractFinancialData(
           fullText
         );
+        setProgressStep(3);
 
       console.log(
         'PDF 재무제표 추출 결과:',
@@ -175,12 +178,11 @@ export default function PdfUpload({
       );
 
       setStatus('success');
+setProgressStep(3);
 
-      setMessage(
-        `PDF 읽기 성공 · ${pdf.numPages}페이지 · ${fullText.length.toLocaleString()}자 추출 · 핵심계정 ${financialData.coverage.toFixed(
-          0
-        )}% 인식`
-      );
+setMessage(
+  `분석 준비 완료 · ${pdf.numPages}페이지 · 핵심계정 ${financialData.coverage.toFixed(0)}% 인식`
+);
 
       setPreview(
         fullText.slice(0, 3000)
@@ -190,7 +192,7 @@ export default function PdfUpload({
         'PDF 분석 실패:',
         error
       );
-
+      setProgressStep(0);
       setStatus('error');
 
       setMessage(
@@ -357,20 +359,95 @@ export default function PdfUpload({
       )}
 
       {status !== 'idle' && (
-        <div
-          style={{
-            marginTop: 14,
-            padding:
-              '12px 14px',
-            borderRadius: 10,
-            background:
-              '#f8fafc',
-            fontSize: 13,
-          }}
-        >
-          {message}
-        </div>
-      )}
+  <div
+    style={{
+      marginTop: 14,
+      padding: '16px',
+      borderRadius: 12,
+      background: '#f8fafc',
+      border: '1px solid #e2e8f0',
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}
+    >
+      {[
+        ['PDF 읽기', 1],
+        ['재무제표 추출', 2],
+        ['분석 준비', 3],
+      ].map(([label, step]) => {
+        const completed = progressStep >= step;
+        const current =
+          status === 'loading' &&
+          progressStep === step;
+
+        return (
+          <div
+            key={label}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              fontSize: 13,
+            }}
+          >
+            <div
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: '0 0 auto',
+                background: completed
+                  ? '#2457d6'
+                  : '#e2e8f0',
+                color: completed
+                  ? '#ffffff'
+                  : '#94a3b8',
+                fontSize: 11,
+                fontWeight: 700,
+              }}
+            >
+              {completed ? '✓' : step}
+            </div>
+
+            <span
+              style={{
+                color: completed
+                  ? '#172033'
+                  : '#94a3b8',
+                fontWeight: current
+                  ? 700
+                  : 500,
+              }}
+            >
+              {label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+
+    <div
+      style={{
+        marginTop: 12,
+        fontSize: 12,
+        color:
+          status === 'error'
+            ? '#dc2626'
+            : '#64748b',
+      }}
+    >
+      {message}
+    </div>
+  </div>
+)}
       {extractedData && (
         <div
           style={{
@@ -522,6 +599,24 @@ export default function PdfUpload({
               </tbody>
             </table>
           </div>
+          <button
+  type="button"
+  onClick={() => onAnalyze?.(extractedData)}
+  style={{
+    width: '100%',
+    marginTop: 18,
+    padding: '14px 18px',
+    border: 0,
+    borderRadius: 12,
+    background: '#2457d6',
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+  }}
+>
+  이 데이터로 분석하기 →
+</button>
         </div>
       )}
 
